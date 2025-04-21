@@ -135,6 +135,7 @@
     )
   )
 )
+
 ;; Process crypto payments
 (define-private (process-crypto-payment
                  (amount uint)
