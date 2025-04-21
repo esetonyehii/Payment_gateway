@@ -218,3 +218,40 @@
     (ok true)
   )
 )
+
+;; Process refunds
+(define-public (process-refund
+               (tx-id (string-ascii 128))
+               (refund-amount uint)
+               (reason (string-ascii 64)))
+  (let
+    (
+      (payment (unwrap! (map-get? payments tx-id) (err u404)))
+    )
+    
+    ;; Verify payment exists and is completed
+    (asserts! (is-eq (get status payment) "completed") (err u403))
+    
+    ;; Verify refund amount doesn't exceed original payment
+    (asserts! (<= refund-amount (get amount payment)) (err u400))
+    
+    ;; Process refund through payment gateway (simulated)
+    (print {
+      event: "refund-initiated",
+      transaction: tx-id,
+      amount: refund-amount,
+      reason: reason
+    })
+    
+    ;; Update payment record with refund information
+    (map-set payments (concat tx-id "-refund") {
+      amount: refund-amount,
+      customer-id: (get customer-id payment),
+      status: "refunded",
+      approval-code: (concat "REF-" (get approval-code payment)),
+      timestamp: (unwrap-panic (get-block-info? time u0))
+    })
+    
+    (ok true)
+  )
+)
