@@ -175,3 +175,46 @@
     )
   )
 )
+;; Define data map for storing payment records
+(define-map payments
+  (string-ascii 128) ;; transaction ID
+  {
+    amount: uint,
+    customer-id: (string-ascii 64),
+    status: (string-ascii 16),
+    approval-code: (string-ascii 32),
+    timestamp: uint
+  }
+)
+
+;; Verify payment status
+(define-read-only (get-payment-status (tx-id (string-ascii 128)))
+  (map-get? payments tx-id)
+)
+
+;; Webhook handler for payment status updates (simulated)
+(define-public (update-payment-status
+               (tx-id (string-ascii 128))
+               (new-status (string-ascii 16))
+               (approval-code (string-ascii 32)))
+  (let
+    (
+      (current-payment (unwrap! (map-get? payments tx-id) (err u404)))
+    )
+    
+    ;; Update the payment status
+    (map-set payments tx-id (merge current-payment {
+      status: new-status,
+      approval-code: approval-code
+    }))
+    
+    ;; Emit an event for the status change
+    (print {
+      event: "payment-status-updated",
+      transaction: tx-id,
+      new-status: new-status
+    })
+    
+    (ok true)
+  )
+)
